@@ -1,0 +1,49 @@
+{
+  "name": "@openclaw/dialetica",
+  "version": "2026.4.9",
+  "private": true,
+  "description": "OpenClaw Dialetica channel plugin",
+  "type": "module",
+  "dependencies": {
+    "ws": "^8.20.0"
+  },
+  "devDependencies": {
+    "@openclaw/plugin-sdk": "workspace:*",
+    "openclaw": "workspace:*"
+  },
+  "peerDependencies": {
+    "openclaw": ">=2026.4.9"
+  },
+  "peerDependenciesMeta": {
+    "openclaw": {
+      "optional": true
+    }
+  },
+  "openclaw": {
+    "extensions": [
+      "./index.ts"
+    ],
+    "setupEntry": "./setup-entry.ts",
+    "channel": {
+      "id": "dialetica",
+      "label": "Dialetica",
+      "selectionLabel": "Dialetica (Internal)",
+      "detailLabel": "Dialetica",
+      "docsPath": "/channels/dialetica",
+      "docsLabel": "dialetica",
+      "blurb": "Internal room-based team chat transport for Dialetica-managed OpenClaw teams.",
+      "systemImage": "app-window",
+      "order": 998,
+      "exposure": {
+        "configured": false,
+        "setup": false,
+        "docs": false
+      }
+    },
+    "install": {
+      "npmSpec": "@openclaw/dialetica",
+      "defaultChoice": "npm",
+      "minHostVersion": ">=2026.4.9"
+    }
+  }
+}

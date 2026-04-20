@@ -1,0 +1,9 @@
+{
+  "id": "dialetica",
+  "channels": ["dialetica"],
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {}
+  }
+}
