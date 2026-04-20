@@ -9,7 +9,7 @@ import type {
   ResolvedDialeticaAccount,
 } from "./types.js";
 
-function buildHeaders(account: ResolvedDialeticaAccount): HeadersInit {
+function buildHeaders(account: ResolvedDialeticaAccount): Record<string, string> {
   const headers: Record<string, string> = {
     "content-type": "application/json",
     "x-openclaw-runtime-id": account.runtimeId,
@@ -48,7 +48,7 @@ export async function subscribeDialeticaEventsWs(params: {
   return await new Promise<number>((resolve, reject) => {
     let settled = false;
     let currentCursor = params.cursor;
-    const ws = new WebSocket(url, {
+    const ws = new WebSocket(url, [], {
       headers: buildHeaders(params.account),
     });
 

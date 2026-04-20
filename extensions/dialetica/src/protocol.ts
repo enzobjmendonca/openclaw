@@ -2,14 +2,14 @@ export type DialeticaTarget = {
   roomId: string;
 };
 
-export function normalizeDialeticaTarget(raw: string): string | null {
+export function normalizeDialeticaTarget(raw: string): string | undefined {
   const trimmed = raw.trim();
   if (!trimmed) {
-    return null;
+    return undefined;
   }
   if (trimmed.startsWith("room:")) {
     const roomId = trimmed.slice("room:".length).trim();
-    return roomId ? `room:${roomId}` : null;
+    return roomId ? `room:${roomId}` : undefined;
   }
   return `room:${trimmed}`;
 }
