@@ -26,6 +26,8 @@ export type ChannelOutboundContext = {
   replyToId?: string | null;
   threadId?: string | number | null;
   accountId?: string | null;
+  /** Dialetica patch: sending agent id, used by extensions/dialetica/channel.sendMedia. */
+  agentId?: string;
   identity?: OutboundIdentity;
   deps?: OutboundSendDeps;
   silent?: boolean;

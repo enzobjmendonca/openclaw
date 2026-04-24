@@ -9,7 +9,17 @@ export async function startDialeticaGatewayAccount(
   ctx: ChannelGatewayContext<ResolvedDialeticaAccount>,
 ) {
   const account = ctx.account;
+  console.info("[dialetica] startAccount called", {
+    accountId: account.accountId,
+    configured: account.configured,
+    enabled: account.enabled,
+    baseUrl: account.baseUrl || "<empty>",
+  });
   if (!account.configured) {
+    console.warn(
+      `[dialetica] account "${account.accountId}" not configured; set channels.dialetica.baseUrl in config, ` +
+        `or DIALETICA_BASE_URL + DIALETICA_API_TOKEN in env.`,
+    );
     throw new Error(`Dialetica is not configured for account "${account.accountId}"`);
   }
   ctx.setStatus({

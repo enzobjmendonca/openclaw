@@ -342,6 +342,8 @@ export function createOpenClawCodingTools(options?: {
   senderIsOwner?: boolean;
   /** Callback invoked when sessions_yield tool is called. */
   onYield?: (message: string) => Promise<void> | void;
+  /** Callback invoked when pass_turn tool is called. */
+  onPassTurn?: (reason: string | undefined) => Promise<void> | void;
 }): AnyAgentTool[] {
   const execToolName = "exec";
   const sandbox = options?.sandbox?.enabled ? options.sandbox : undefined;
@@ -631,6 +633,7 @@ export function createOpenClawCodingTools(options?: {
       senderIsOwner: options?.senderIsOwner,
       sessionId: options?.sessionId,
       onYield: options?.onYield,
+      onPassTurn: options?.onPassTurn,
       allowGatewaySubagentBinding: options?.allowGatewaySubagentBinding,
     }),
   ];

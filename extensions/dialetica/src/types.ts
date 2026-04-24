@@ -77,6 +77,13 @@ export type DialeticaWsClientFrame = {
   cursor: number;
 };
 
+export type DialeticaOutboundAttachment = {
+  fileId: string;
+  name: string;
+  mime: string;
+  size: number;
+};
+
 export type DialeticaOutboundMessageInput = {
   accountId?: string;
   roomId: string;
@@ -85,6 +92,8 @@ export type DialeticaOutboundMessageInput = {
   senderId?: string;
   senderName?: string;
   replyToId?: string;
+  /** File references already uploaded to Dialetica's /v1/files/upload. */
+  attachments?: DialeticaOutboundAttachment[];
 };
 
 export type DialeticaStreamEventInput =
@@ -107,7 +116,6 @@ export type DialeticaAccountConfig = {
   enabled?: boolean;
   baseUrl?: string;
   apiToken?: string;
-  runtimeId?: string;
   botUserId?: string;
   botDisplayName?: string;
   allowFrom?: Array<string | number>;
@@ -135,7 +143,6 @@ export type ResolvedDialeticaAccount = {
   name?: string;
   baseUrl: string;
   apiToken?: string;
-  runtimeId: string;
   botUserId: string;
   botDisplayName: string;
   config: DialeticaAccountConfig;

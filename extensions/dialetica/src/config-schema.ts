@@ -7,7 +7,6 @@ export const DialeticaAccountConfigSchema = z
     enabled: z.boolean().optional(),
     baseUrl: z.string().url().optional(),
     apiToken: z.string().optional(),
-    runtimeId: z.string().min(1).optional(),
     botUserId: z.string().optional(),
     botDisplayName: z.string().optional(),
     allowFrom: z.array(z.union([z.string(), z.number()])).optional(),

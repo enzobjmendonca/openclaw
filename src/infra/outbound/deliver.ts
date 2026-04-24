@@ -146,6 +146,7 @@ type ChannelHandlerParams = {
   channel: Exclude<OutboundChannel, "none">;
   to: string;
   accountId?: string;
+  agentId?: string;
   replyToId?: string | null;
   threadId?: string | number | null;
   identity?: OutboundIdentity;
@@ -308,6 +309,7 @@ function createChannelOutboundContextBase(
     cfg: params.cfg,
     to: params.to,
     accountId: params.accountId,
+    agentId: params.agentId,
     replyToId: params.replyToId,
     threadId: params.threadId,
     identity: params.identity,
@@ -758,6 +760,7 @@ async function deliverOutboundPayloadsCore(
     to,
     deps,
     accountId,
+    agentId: params.session?.agentId ?? params.mirror?.agentId,
     replyToId: params.replyToId,
     threadId: params.threadId,
     identity: params.identity,

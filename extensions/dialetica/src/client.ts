@@ -12,7 +12,6 @@ import type {
 function buildHeaders(account: ResolvedDialeticaAccount): Record<string, string> {
   const headers: Record<string, string> = {
     "content-type": "application/json",
-    "x-openclaw-runtime-id": account.runtimeId,
   };
   if (account.apiToken) {
     headers.authorization = `Bearer ${account.apiToken}`;
@@ -43,7 +42,6 @@ export async function subscribeDialeticaEventsWs(params: {
   const url = toDialeticaWsUrl(params.account.baseUrl);
   url.searchParams.set("accountId", params.account.accountId);
   url.searchParams.set("cursor", String(params.cursor));
-  url.searchParams.set("runtimeId", params.account.runtimeId);
 
   return await new Promise<number>((resolve, reject) => {
     let settled = false;
@@ -126,18 +124,24 @@ export async function sendDialeticaMessage(params: {
   message: DialeticaOutboundMessageInput;
 }): Promise<{ roomId: string; messageId: string }> {
   const room = parseDialeticaTarget(params.message.roomId);
+  const attachments = params.message.attachments?.map((a) => ({
+    file_id: a.fileId,
+    name: a.name,
+    mime: a.mime,
+    size: a.size,
+  }));
   const response = await fetch(new URL("/v1/openclaw/dialetica/messages", params.account.baseUrl), {
     method: "POST",
     headers: buildHeaders(params.account),
     body: JSON.stringify({
       accountId: params.account.accountId,
-      runtimeId: params.account.runtimeId,
       roomId: room.roomId,
       messageId: params.message.messageId,
       text: params.message.text,
       senderId: params.message.senderId ?? params.account.botUserId,
       senderName: params.message.senderName ?? params.account.botDisplayName,
       replyToId: params.message.replyToId,
+      ...(attachments && attachments.length > 0 ? { attachments } : {}),
     }),
   });
   const data = await readJson<{ roomId?: string; messageId: string }>(response, "Dialetica send");
@@ -146,10 +150,53 @@ export async function sendDialeticaMessage(params: {
     roomId: room.roomId,
     messageId: data.messageId,
     replyToId: params.message.replyToId ?? null,
+    attachmentCount: attachments?.length ?? 0,
   });
   return {
     roomId: data.roomId ?? buildDialeticaTarget(room),
     messageId: data.messageId,
+  };
+}
+
+/**
+ * Upload a file to Dialetica's /v1/files/upload. Returns the file_id plus
+ * the echoed metadata, ready to feed into `sendDialeticaMessage` as an
+ * attachment. The gateway content-hashes + dedups on the file-service side,
+ * so re-uploading identical bytes is cheap and idempotent.
+ */
+export async function uploadDialeticaFile(params: {
+  account: ResolvedDialeticaAccount;
+  bytes: Buffer | Uint8Array;
+  name: string;
+  mime: string;
+}): Promise<{ fileId: string; name: string; mime: string; size: number }> {
+  const form = new FormData();
+  // TS's Blob type narrows BlobPart to Uint8Array<ArrayBuffer>, but Buffer
+  // (and Uint8Array<ArrayBufferLike>) overlap structurally — cast through
+  // BlobPart to bridge the two.
+  const blob = new Blob([params.bytes as unknown as BlobPart], { type: params.mime });
+  form.append("file", blob, params.name);
+  form.append("name", params.name);
+  form.append("mime", params.mime);
+
+  const headers: Record<string, string> = {};
+  if (params.account.apiToken) {
+    headers.authorization = `Bearer ${params.account.apiToken}`;
+  }
+  const response = await fetch(new URL("/v1/files/upload", params.account.baseUrl), {
+    method: "POST",
+    headers, // NOTE: do not set content-type; fetch + FormData handle the multipart boundary
+    body: form,
+  });
+  const data = await readJson<{ file_id: string; name: string; mime: string; size: number }>(
+    response,
+    "Dialetica file upload",
+  );
+  return {
+    fileId: data.file_id,
+    name: data.name,
+    mime: data.mime,
+    size: data.size,
   };
 }
 
@@ -163,7 +210,6 @@ export async function sendDialeticaStreamEvent(params: {
     headers: buildHeaders(params.account),
     body: JSON.stringify({
       accountId: params.account.accountId,
-      runtimeId: params.account.runtimeId,
       roomId: room.roomId,
       event:
         params.event.kind === "message_started"

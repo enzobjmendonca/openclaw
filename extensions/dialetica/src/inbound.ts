@@ -1,3 +1,5 @@
+import fs from "node:fs/promises";
+import path from "node:path";
 import { randomUUID } from "node:crypto";
 import type { OpenClawConfig } from "openclaw/plugin-sdk/config-runtime";
 import { dispatchInboundReplyWithBase } from "openclaw/plugin-sdk/inbound-reply-dispatch";
@@ -7,9 +9,42 @@ import {
   deriveLastRoutePolicy,
   type ResolvedAgentRoute,
 } from "openclaw/plugin-sdk/routing";
-import { sendDialeticaMessage, sendDialeticaStreamEvent } from "./client.js";
+import { sendDialeticaMessage, sendDialeticaStreamEvent, uploadDialeticaFile } from "./client.js";
 import { getDialeticaRuntime } from "./runtime.js";
-import type { CoreConfig, DialeticaInboundMessage, ResolvedDialeticaAccount } from "./types.js";
+import type {
+  CoreConfig,
+  DialeticaInboundMessage,
+  DialeticaOutboundAttachment,
+  ResolvedDialeticaAccount,
+} from "./types.js";
+
+// Minimal mime sniffer for common agent outputs. Informational only — the
+// file service content-hashes uploads on its side.
+const MIME_MAP: Record<string, string> = {
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  gif: "image/gif",
+  webp: "image/webp",
+  svg: "image/svg+xml",
+  pdf: "application/pdf",
+  txt: "text/plain",
+  md: "text/markdown",
+  json: "application/json",
+  csv: "text/csv",
+  html: "text/html",
+  xml: "application/xml",
+  mp3: "audio/mpeg",
+  wav: "audio/wav",
+  mp4: "video/mp4",
+  webm: "video/webm",
+  zip: "application/zip",
+};
+
+function guessMime(name: string): string {
+  const ext = name.toLowerCase().split(".").pop() ?? "";
+  return MIME_MAP[ext] ?? "application/octet-stream";
+}
 
 const STREAM_THROTTLE_MS = 150;
 
@@ -330,13 +365,56 @@ export async function handleDialeticaInbound(params: {
       onReasoningStream: async () => {},
     },
     deliver: async (payload) => {
-      const text =
-        payload && typeof payload === "object" && "text" in payload
-          ? String((payload as { text?: string }).text ?? "")
-          : "";
-      if (!text.trim()) {
+      const p = (payload && typeof payload === "object" ? payload : {}) as {
+        text?: string;
+        mediaUrl?: string;
+        mediaUrls?: string[];
+      };
+      const text = String(p.text ?? "");
+      // Collect local file paths from both the legacy single field and the
+      // modern array. Agent workspace paths are the common case; if the
+      // value happens to be a URL we skip it (upload-from-URL isn't wired).
+      const mediaPaths: string[] = [];
+      if (typeof p.mediaUrl === "string") mediaPaths.push(p.mediaUrl);
+      if (Array.isArray(p.mediaUrls)) {
+        for (const u of p.mediaUrls) {
+          if (typeof u === "string") mediaPaths.push(u);
+        }
+      }
+
+      // Nothing to deliver (no text, no attachments).
+      if (!text.trim() && mediaPaths.length === 0) {
         return;
       }
+
+      // Upload any attachments to Dialetica's file service, collecting
+      // file_ids. Skip (with a log) individual failures rather than dropping
+      // the whole message — at least the text part should land.
+      const attachments: DialeticaOutboundAttachment[] = [];
+      for (const mediaPath of mediaPaths) {
+        try {
+          // Only upload local paths; URLs fall through and aren't attached.
+          if (/^https?:\/\//i.test(mediaPath)) {
+            console.warn("[dialetica] skipping remote mediaUrl in outbound", { mediaPath });
+            continue;
+          }
+          const bytes = await fs.readFile(mediaPath);
+          const name = path.basename(mediaPath);
+          const uploaded = await uploadDialeticaFile({
+            account: params.account,
+            bytes,
+            name,
+            mime: guessMime(name),
+          });
+          attachments.push(uploaded);
+        } catch (error) {
+          console.warn("[dialetica] failed to upload attachment", {
+            mediaPath,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
+      }
+
       if (textFlushTimer) {
         clearTimeout(textFlushTimer);
         textFlushTimer = null;
@@ -350,6 +428,20 @@ export async function handleDialeticaInbound(params: {
       const messageId = streamedText
         ? (currentMessageId ?? (await ensureStreamingMessage()))
         : undefined;
+      // Resolve replyToId from the OpenClaw reply directive:
+      //   [[reply_to:abc-123]]   → payload.replyToId = "abc-123"
+      //   [[reply_to_current]]   → payload.replyToCurrent = true  (resolve to inbound.id)
+      //   (no directive)          → no quote (don't stamp — the DB stores null)
+      // Previously this path stamped inbound.id unconditionally, which turned
+      // every single agent reply into a "quoted" reply and made the feature
+      // useless for signalling intent.
+      const replyPayload = payload as {
+        replyToId?: string;
+        replyToCurrent?: boolean;
+      } | null | undefined;
+      const resolvedReplyToId =
+        replyPayload?.replyToId ??
+        (replyPayload?.replyToCurrent ? inbound.id : undefined);
       await sendDialeticaMessage({
         account: params.account,
         message: {
@@ -358,14 +450,16 @@ export async function handleDialeticaInbound(params: {
           text,
           senderId: inbound.targetDialeticaAgentId,
           senderName: inbound.targetDialeticaAgentName,
-          replyToId: inbound.id,
+          replyToId: resolvedReplyToId,
+          attachments: attachments.length > 0 ? attachments : undefined,
         },
       });
       console.info("[dialetica] dispatched reply", {
         roomId: inbound.room.id,
         targetAgentId: route.agentId,
         messageId: messageId ?? null,
-        replyToId: inbound.id,
+        replyToId: resolvedReplyToId ?? null,
+        attachmentCount: attachments.length,
       });
       currentMessageId = null;
       streamedText = false;
