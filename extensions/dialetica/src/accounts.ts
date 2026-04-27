@@ -85,7 +85,11 @@ export function resolveDialeticaAccount(params: {
   // knob produced the final value. Only the default account logs; other
   // accounts are expected to be configured via config file, so spamming them
   // on every resolveDialeticaAccount call is noise.
-  if (isDefaultAccount) {
+  // Suppress when the default account is explicitly disabled — OpenClaw's
+  // periodic channel-status loop re-resolves every known account each tick,
+  // and a logged "default disabled" line each minute is noise rather than
+  // signal once per-org accounts are the real path.
+  if (isDefaultAccount && enabled) {
     console.info("[dialetica] account resolved", {
       accountId,
       enabled,
