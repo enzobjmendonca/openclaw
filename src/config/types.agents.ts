@@ -10,6 +10,7 @@ import type {
   AgentSandboxConfig,
 } from "./types.agents-shared.js";
 import type { HumanDelayConfig, IdentityConfig } from "./types.base.js";
+import type { McpConfig } from "./types.mcp.js";
 import type { GroupChatConfig } from "./types.messages.js";
 import type { SkillsLimitsConfig } from "./types.skills.js";
 import type { AgentToolsConfig, MemorySearchConfig } from "./types.tools.js";
@@ -112,6 +113,14 @@ export type AgentConfig = {
     /** Optional per-agent execution contract override. */
     executionContract?: EmbeddedPiExecutionContract;
   };
+  /**
+   * Optional per-agent MCP server overlay. Layered over `cfg.mcp.servers`
+   * at session-create time; per-agent wins on name collisions. The
+   * overlay participates in the session-runtime fingerprint so adding
+   * or removing servers under an agent invalidates only that agent's
+   * cached MCP runtime. See docs/design/per-agent-mcp.md.
+   */
+  mcp?: McpConfig;
   /** Optional per-agent sandbox overrides. */
   sandbox?: AgentSandboxConfig;
   /** Optional per-agent stream params (e.g. cacheRetention, temperature). */

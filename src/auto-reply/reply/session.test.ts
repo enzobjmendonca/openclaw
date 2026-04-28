@@ -2447,6 +2447,7 @@ describe("initSessionState preserves behavior overrides across /new and /reset",
       sessionId: existingSessionId,
       sessionKey,
       workspaceDir: path.dirname(storePath),
+      agentId: "test-agent",
       cfg,
     });
 

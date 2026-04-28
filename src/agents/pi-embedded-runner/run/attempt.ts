@@ -753,6 +753,13 @@ export async function runEmbeddedAttempt(
           sessionId: params.sessionId,
           sessionKey: params.sessionKey,
           workspaceDir: effectiveWorkspace,
+          // The MCP runtime cache is keyed on (sessionId, fingerprint).
+          // The fingerprint hashes the merged server map, which in turn
+          // depends on the per-agent overlay at
+          // `cfg.agents.list[<id>].mcp.servers`. Without agentId here,
+          // the loader can't see that overlay — adding/removing an
+          // integration would never land for the running session.
+          agentId: sessionAgentId,
           cfg: params.config,
         })
       : undefined;

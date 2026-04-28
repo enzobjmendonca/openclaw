@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+﻿import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanupBundleMcpHarness } from "./pi-bundle-mcp-test-harness.js";
 import {
   __testing,
@@ -138,11 +138,13 @@ describe("session MCP runtime", () => {
       sessionId: "session-a",
       sessionKey: "agent:test:session-a",
       workspaceDir: "/workspace",
+      agentId: "test-agent",
     });
     const runtimeB = await manager.getOrCreate({
       sessionId: "session-a",
       sessionKey: "agent:test:session-a",
       workspaceDir: "/workspace",
+      agentId: "test-agent",
     });
 
     const materializedA = await materializeBundleMcpToolsForRun({ runtime: runtimeA });
@@ -164,6 +166,7 @@ describe("session MCP runtime", () => {
       sessionId: "session-a",
       sessionKey: "agent:test:session-a",
       workspaceDir: "/workspace",
+      agentId: "test-agent",
     });
     await materializeBundleMcpToolsForRun({ runtime: runtimeC });
 
@@ -207,6 +210,7 @@ describe("session MCP runtime", () => {
       sessionId: "session-c",
       sessionKey: "agent:test:session-c",
       workspaceDir: "/workspace",
+      agentId: "test-agent",
       cfg: {
         mcp: {
           servers: {
@@ -233,6 +237,7 @@ describe("session MCP runtime", () => {
       sessionId: "session-c",
       sessionKey: "agent:test:session-c",
       workspaceDir: "/workspace",
+      agentId: "test-agent",
       cfg: {
         mcp: {
           servers: {
@@ -287,6 +292,7 @@ describe("session MCP runtime", () => {
       sessionId: "session-d",
       sessionKey: "agent:test:session-d",
       workspaceDir: "/workspace",
+      agentId: "test-agent",
     });
 
     const materializeResult = materializeBundleMcpToolsForRun({ runtime }).then(
@@ -310,6 +316,7 @@ describe("session MCP runtime", () => {
       sessionId: "session-retire",
       sessionKey: "agent:test:session-retire",
       workspaceDir: "/workspace",
+      agentId: "test-agent",
     });
     expect(__testing.getCachedSessionIds()).toContain("session-retire");
 
@@ -326,6 +333,7 @@ describe("session MCP runtime", () => {
       sessionId: "session-retire-key",
       sessionKey: "agent:test:session-retire-key",
       workspaceDir: "/workspace",
+      agentId: "test-agent",
     });
     expect(__testing.getCachedSessionIds()).toContain("session-retire-key");
 
@@ -342,3 +350,4 @@ describe("session MCP runtime", () => {
     ).resolves.toBe(false);
   });
 });
+

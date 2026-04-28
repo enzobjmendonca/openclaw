@@ -134,11 +134,16 @@ export async function materializeBundleMcpToolsForRun(params: {
 
 export async function createBundleMcpToolRuntime(params: {
   workspaceDir: string;
+  // Required so the per-agent MCP overlay participates in the runtime
+  // fingerprint. Compaction and other one-shot tool-runtime spawns must
+  // see the same per-agent slice the agent does at chat time.
+  agentId: string;
   cfg?: OpenClawConfig;
   reservedToolNames?: Iterable<string>;
   createRuntime?: (params: {
     sessionId: string;
     workspaceDir: string;
+    agentId: string;
     cfg?: OpenClawConfig;
   }) => SessionMcpRuntime;
 }): Promise<BundleMcpToolRuntime> {
@@ -147,6 +152,7 @@ export async function createBundleMcpToolRuntime(params: {
   const runtime = createRuntime({
     sessionId: `bundle-mcp:${crypto.randomUUID()}`,
     workspaceDir: params.workspaceDir,
+    agentId: params.agentId,
     cfg: params.cfg,
   });
   const materialized = await materializeBundleMcpToolsForRun({

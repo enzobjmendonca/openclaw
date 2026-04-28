@@ -86,6 +86,7 @@ describe("createBundleMcpToolRuntime", () => {
     >[0][] = [];
     const runtime = await createBundleMcpToolRuntime({
       workspaceDir: "/workspace",
+      agentId: "test-agent",
       cfg: {
         mcp: {
           servers: {

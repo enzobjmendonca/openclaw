@@ -89,7 +89,9 @@ function createCatalogFingerprint(servers: Record<string, unknown>): string {
 
 function loadSessionMcpConfig(params: {
   workspaceDir: string;
-  agentId?: string;
+  // Internal helper — every call site is session-scoped and has an
+  // agentId. Required to keep type safety across the chain.
+  agentId: string;
   cfg?: OpenClawConfig;
   logDiagnostics?: boolean;
 }): {
@@ -125,7 +127,12 @@ export function createSessionMcpRuntime(params: {
   sessionId: string;
   sessionKey?: string;
   workspaceDir: string;
-  agentId?: string;
+  // Required: a session always has an owning agent, and the
+  // per-agent MCP overlay at `cfg.agents.list[<id>].mcp.servers`
+  // participates in the runtime fingerprint. Making this optional
+  // silently dropped per-agent integrations from sessions whose
+  // call site forgot to pass it.
+  agentId: string;
   cfg?: OpenClawConfig;
 }): SessionMcpRuntime {
   const { loaded, fingerprint: configFingerprint } = loadSessionMcpConfig({
@@ -438,7 +445,8 @@ export async function getOrCreateSessionMcpRuntime(params: {
   sessionId: string;
   sessionKey?: string;
   workspaceDir: string;
-  agentId?: string;
+  // Required: see createSessionMcpRuntime for rationale.
+  agentId: string;
   cfg?: OpenClawConfig;
 }): Promise<SessionMcpRuntime> {
   return await getSessionMcpRuntimeManager().getOrCreate(params);

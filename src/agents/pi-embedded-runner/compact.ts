@@ -569,6 +569,10 @@ export async function compactEmbeddedPiSessionDirect(
     const bundleMcpRuntime = toolsEnabled
       ? await createBundleMcpToolRuntime({
           workspaceDir: effectiveWorkspace,
+          // The skill-evaluation pass uses the resolved agent id from
+          // the session key — same shape the run-time MCP loader uses
+          // so the two MCP runtimes agree on tool surface.
+          agentId: effectiveSkillAgentId,
           cfg: params.config,
           reservedToolNames: tools.map((tool) => tool.name),
         })
