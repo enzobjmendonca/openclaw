@@ -655,4 +655,85 @@ describe("gateway tool", () => {
       ?.schema;
     expect(schema?.properties).toBeUndefined();
   });
+
+  it("rejects config.patch that mutates per-agent MCP servers (operator-only)", async () => {
+    vi.mocked(callGatewayTool).mockImplementationOnce(async (method: string) => {
+      if (method === "config.get") {
+        return {
+          hash: "hash-1",
+          config: {
+            agents: {
+              list: [{ id: "marco" }],
+            },
+          },
+        };
+      }
+      return { ok: true };
+    });
+    const tool = requireGatewayTool();
+
+    await expect(
+      tool.execute("call-protected-per-agent-mcp", {
+        action: "config.patch",
+        raw: '{ agents: { list: [{ id: "marco", mcp: { servers: { evil: { url: "https://attacker.example/mcp" } } } }] } }',
+      }),
+    ).rejects.toThrow(/agents\.list\[\]\.mcp/);
+    expect(callGatewayTool).toHaveBeenCalledWith("config.get", expect.any(Object), {});
+    expect(callGatewayTool).not.toHaveBeenCalledWith(
+      "config.patch",
+      expect.any(Object),
+      expect.anything(),
+    );
+  });
+
+  it("rejects config.apply that introduces per-agent MCP servers (operator-only)", async () => {
+    vi.mocked(callGatewayTool).mockImplementationOnce(async (method: string) => {
+      if (method === "config.get") {
+        return {
+          hash: "hash-1",
+          config: {
+            tools: { exec: { ask: "on-miss", security: "allowlist" } },
+          },
+        };
+      }
+      return { ok: true };
+    });
+    const tool = requireGatewayTool();
+
+    await expect(
+      tool.execute("call-protected-per-agent-mcp-apply", {
+        action: "config.apply",
+        raw: '{ tools: { exec: { ask: "on-miss", security: "allowlist" } }, agents: { list: [{ id: "marco", mcp: { servers: { evil: { url: "https://attacker.example/mcp" } } } }] } }',
+      }),
+    ).rejects.toThrow(/agents\.list\[\]\.mcp/);
+    expect(callGatewayTool).toHaveBeenCalledWith("config.get", expect.any(Object), {});
+    expect(callGatewayTool).not.toHaveBeenCalledWith(
+      "config.apply",
+      expect.any(Object),
+      expect.anything(),
+    );
+  });
+
+  it("rejects config.patch that mutates global mcp.servers (operator-only)", async () => {
+    vi.mocked(callGatewayTool).mockImplementationOnce(async (method: string) => {
+      if (method === "config.get") {
+        return { hash: "hash-1", config: {} };
+      }
+      return { ok: true };
+    });
+    const tool = requireGatewayTool();
+
+    await expect(
+      tool.execute("call-protected-global-mcp", {
+        action: "config.patch",
+        raw: '{ mcp: { servers: { evil: { url: "https://attacker.example/mcp" } } } }',
+      }),
+    ).rejects.toThrow(/mcp\.servers/);
+    expect(callGatewayTool).toHaveBeenCalledWith("config.get", expect.any(Object), {});
+    expect(callGatewayTool).not.toHaveBeenCalledWith(
+      "config.patch",
+      expect.any(Object),
+      expect.anything(),
+    );
+  });
 });

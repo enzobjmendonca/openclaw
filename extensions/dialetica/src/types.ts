@@ -20,6 +20,12 @@ export type DialeticaRoom = {
   mode?: "group" | "direct";
   threadId?: null;
   membershipVersion?: string;
+  /**
+   * Total active members in the room (humans + agents). Used by the inbound
+   * debouncer to scale its trailing-edge wait sub-linearly with room size.
+   * Optional for backward compatibility with older gateway payloads.
+   */
+  memberCount?: number;
 };
 
 export type DialeticaInboundMessage = {
@@ -109,6 +115,17 @@ export type DialeticaStreamEventInput =
       roomId: string;
       messageId: string;
       content: string;
+    }
+  | {
+      // Emitted when the inbound debouncer opens a buffer and the agent is
+      // queued to run after the coalesce window. No messageId yet — the run
+      // hasn't started. The frontend renders this the same way it renders
+      // `message_working`, so users see "<agent> is thinking" during the
+      // 3-15s wait instead of dead silence.
+      kind: "agent_thinking";
+      roomId: string;
+      agentId?: string;
+      agentName?: string;
     };
 
 export type DialeticaAccountConfig = {

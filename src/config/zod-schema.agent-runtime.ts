@@ -14,6 +14,7 @@ import {
   ToolsLinksSchema,
   ToolsMediaSchema,
 } from "./zod-schema.core.js";
+import { McpConfigSchema as PerAgentMcpConfigSchema } from "./zod-schema.mcp.js";
 import { sensitive } from "./zod-schema.sensitive.js";
 
 export const HeartbeatSchema = z
@@ -857,6 +858,12 @@ export const AgentEntrySchema = z
       })
       .strict()
       .optional(),
+    // Per-agent MCP server overlay. Merged on top of cfg.mcp.servers at
+    // session-create time; per-agent wins on name collisions. Enables
+    // multi-tenant isolation when multiple agents in one runtime each
+    // need their own scoped MCP endpoint (e.g., per-agent Composio
+    // user_id). See docs/design/per-agent-mcp.md.
+    mcp: PerAgentMcpConfigSchema.optional(),
     sandbox: AgentSandboxSchema,
     params: z.record(z.string(), z.unknown()).optional(),
     tools: AgentToolsSchema,

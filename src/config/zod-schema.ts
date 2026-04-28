@@ -211,29 +211,11 @@ const TalkSchema = z
     }
   });
 
-const McpServerSchema = z
-  .object({
-    command: z.string().optional(),
-    args: z.array(z.string()).optional(),
-    env: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).optional(),
-    cwd: z.string().optional(),
-    workingDirectory: z.string().optional(),
-    url: HttpUrlSchema.optional(),
-    headers: z
-      .record(
-        z.string(),
-        z.union([z.string().register(sensitive), z.number(), z.boolean()]).register(sensitive),
-      )
-      .optional(),
-  })
-  .catchall(z.unknown());
-
-const McpConfigSchema = z
-  .object({
-    servers: z.record(z.string(), McpServerSchema).optional(),
-  })
-  .strict()
-  .optional();
+// McpServerSchema / McpConfigSchema were moved to ./zod-schema.mcp.js so that
+// per-agent overlays under AgentEntrySchema can reuse the exact same shape
+// without creating a circular import via zod-schema.agents.js.
+import { McpConfigSchema as SharedMcpConfigSchema } from "./zod-schema.mcp.js";
+const McpConfigSchema = SharedMcpConfigSchema.optional();
 
 export const OpenClawSchema = z
   .object({

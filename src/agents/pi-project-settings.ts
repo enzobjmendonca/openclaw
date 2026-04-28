@@ -16,12 +16,14 @@ export {
 export function createEmbeddedPiSettingsManager(params: {
   cwd: string;
   agentDir: string;
+  agentId?: string;
   cfg?: OpenClawConfig;
 }): SettingsManager {
   const fileSettingsManager = SettingsManager.create(params.cwd, params.agentDir);
   const policy = resolveEmbeddedPiProjectSettingsPolicy(params.cfg);
   const pluginSettings = loadEnabledBundlePiSettingsSnapshot({
     cwd: params.cwd,
+    agentId: params.agentId,
     cfg: params.cfg,
   });
   const hasPluginSettings = Object.keys(pluginSettings).length > 0;
@@ -40,6 +42,7 @@ export function createEmbeddedPiSettingsManager(params: {
 export function createPreparedEmbeddedPiSettingsManager(params: {
   cwd: string;
   agentDir: string;
+  agentId?: string;
   cfg?: OpenClawConfig;
   /** Resolved context window budget so reserve-token floor can be capped for small models. */
   contextTokenBudget?: number;

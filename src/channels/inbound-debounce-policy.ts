@@ -3,6 +3,7 @@ import type { CommandNormalizeOptions } from "../auto-reply/commands-registry.js
 import {
   createInboundDebouncer,
   resolveInboundDebounceMs,
+  resolveInboundMaxWaitMs,
   type InboundDebounceCreateParams,
 } from "../auto-reply/inbound-debounce.js";
 import type { OpenClawConfig } from "../config/types.js";
@@ -29,13 +30,15 @@ export function shouldDebounceTextInbound(params: {
 }
 
 export function createChannelInboundDebouncer<T>(
-  params: Omit<InboundDebounceCreateParams<T>, "debounceMs"> & {
+  params: Omit<InboundDebounceCreateParams<T>, "debounceMs" | "maxWaitMs"> & {
     cfg: OpenClawConfig;
     channel: string;
     debounceMsOverride?: number;
+    maxWaitMsOverride?: number;
   },
 ): {
   debounceMs: number;
+  maxWaitMs: number;
   debouncer: ReturnType<typeof createInboundDebouncer<T>>;
 } {
   const debounceMs = resolveInboundDebounceMs({
@@ -43,10 +46,22 @@ export function createChannelInboundDebouncer<T>(
     channel: params.channel,
     overrideMs: params.debounceMsOverride,
   });
-  const { cfg: _cfg, channel: _channel, debounceMsOverride: _override, ...rest } = params;
+  const maxWaitMs = resolveInboundMaxWaitMs({
+    cfg: params.cfg,
+    channel: params.channel,
+    overrideMs: params.maxWaitMsOverride,
+  });
+  const {
+    cfg: _cfg,
+    channel: _channel,
+    debounceMsOverride: _debounceOverride,
+    maxWaitMsOverride: _maxWaitOverride,
+    ...rest
+  } = params;
   const debouncer = createInboundDebouncer<T>({
     debounceMs,
+    maxWaitMs,
     ...rest,
   });
-  return { debounceMs, debouncer };
+  return { debounceMs, maxWaitMs, debouncer };
 }

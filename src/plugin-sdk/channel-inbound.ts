@@ -2,6 +2,7 @@
 export {
   createInboundDebouncer,
   resolveInboundDebounceMs,
+  resolveInboundMaxWaitMs,
 } from "../auto-reply/inbound-debounce.js";
 export {
   createDirectDmPreCryptoGuardPolicy,

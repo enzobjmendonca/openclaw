@@ -939,6 +939,50 @@ describe("runEmbeddedPiAgent incomplete-turn safety", () => {
     expect(retryInstruction).toBeNull();
   });
 
+  it("does not retry turns where the agent intentionally called pass_turn", () => {
+    const retryInstruction = resolveEmptyResponseRetryInstruction({
+      provider: "openai",
+      modelId: "gpt-5.4",
+      payloadCount: 0,
+      aborted: false,
+      timedOut: false,
+      attempt: makeAttemptResult({
+        assistantTexts: [],
+        toolMetas: [{ toolName: "pass_turn" }],
+        lastAssistant: {
+          role: "assistant",
+          stopReason: "stop",
+          provider: "openai",
+          model: "gpt-5.4",
+          content: [{ type: "text", text: "" }],
+        } as unknown as EmbeddedRunAttemptResult["lastAssistant"],
+      }),
+    });
+
+    expect(retryInstruction).toBeNull();
+  });
+
+  it("does not surface incomplete-turn warning text after pass_turn", () => {
+    const incompleteTurnText = resolveIncompleteTurnPayloadText({
+      payloadCount: 0,
+      aborted: false,
+      timedOut: false,
+      attempt: makeAttemptResult({
+        assistantTexts: [],
+        toolMetas: [{ toolName: "pass_turn" }],
+        lastAssistant: {
+          role: "assistant",
+          stopReason: "stop",
+          provider: "openai",
+          model: "gpt-5.4",
+          content: [{ type: "text", text: "" }],
+        } as unknown as EmbeddedRunAttemptResult["lastAssistant"],
+      }),
+    });
+
+    expect(incompleteTurnText).toBeNull();
+  });
+
   it("marks compaction-timeout retries as paused and replay-invalid", () => {
     const attempt = makeAttemptResult({
       promptErrorSource: "compaction",

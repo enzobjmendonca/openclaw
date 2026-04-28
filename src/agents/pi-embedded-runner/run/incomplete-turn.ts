@@ -26,6 +26,7 @@ type IncompleteTurnAttempt = Pick<
   | "replayMetadata"
   | "promptErrorSource"
   | "timedOutDuringCompaction"
+  | "toolMetas"
 >;
 
 type PlanningOnlyAttempt = Pick<
@@ -271,13 +272,20 @@ function isEmptyResponseAssistantTurn(params: {
   payloadCount: number;
   attempt: Pick<
     IncompleteTurnAttempt,
-    "assistantTexts" | "currentAttemptAssistant" | "lastAssistant"
+    "assistantTexts" | "currentAttemptAssistant" | "lastAssistant" | "toolMetas"
   >;
 }): boolean {
   if (params.payloadCount !== 0) {
     return false;
   }
   if (params.attempt.assistantTexts.join("\n\n").trim().length > 0) {
+    return false;
+  }
+  // pass_turn is an intentional silent exit — the agent decided this turn
+  // should produce no user-visible output. Treating it as an empty-response
+  // failure causes the runner to re-prompt with a "produce visible answer"
+  // nudge that overrides the agent's judgment, breaking group-chat silence.
+  if (params.attempt.toolMetas.some((entry) => entry.toolName === "pass_turn")) {
     return false;
   }
   const assistant = params.attempt.currentAttemptAssistant ?? params.attempt.lastAssistant;

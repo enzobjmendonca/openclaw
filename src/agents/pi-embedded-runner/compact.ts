@@ -821,6 +821,7 @@ export async function compactEmbeddedPiSessionDirect(
       const settingsManager = createPreparedEmbeddedPiSettingsManager({
         cwd: effectiveWorkspace,
         agentDir,
+        agentId: sessionAgentId,
         cfg: params.config,
         contextTokenBudget: ctxInfo.tokens,
       });

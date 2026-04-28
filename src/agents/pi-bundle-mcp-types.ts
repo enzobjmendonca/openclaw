@@ -49,6 +49,13 @@ export type SessionMcpRuntimeManager = {
     sessionId: string;
     sessionKey?: string;
     workspaceDir: string;
+    /**
+     * Optional agent identifier. When provided, the session-scoped MCP
+     * runtime layers `cfg.agents.list[id=agentId].mcp.servers` over
+     * `cfg.mcp.servers`. Per-agent overlay wins on name collisions.
+     * See docs/design/per-agent-mcp.md.
+     */
+    agentId?: string;
     cfg?: OpenClawConfig;
   }) => Promise<SessionMcpRuntime>;
   bindSessionKey: (sessionKey: string, sessionId: string) => void;

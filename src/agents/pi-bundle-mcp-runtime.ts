@@ -89,6 +89,7 @@ function createCatalogFingerprint(servers: Record<string, unknown>): string {
 
 function loadSessionMcpConfig(params: {
   workspaceDir: string;
+  agentId?: string;
   cfg?: OpenClawConfig;
   logDiagnostics?: boolean;
 }): {
@@ -97,6 +98,7 @@ function loadSessionMcpConfig(params: {
 } {
   const loaded = loadEmbeddedPiMcpConfig({
     workspaceDir: params.workspaceDir,
+    agentId: params.agentId,
     cfg: params.cfg,
   });
   if (params.logDiagnostics !== false) {
@@ -104,6 +106,11 @@ function loadSessionMcpConfig(params: {
       logWarn(`bundle-mcp: ${diagnostic.pluginId}: ${diagnostic.message}`);
     }
   }
+  // The fingerprint is computed over the merged mcpServers map, which already
+  // incorporates the per-agent overlay. Two agents on the same host with
+  // different overlays will produce different fingerprints, so the runtime
+  // cache (keyed on sessionId + fingerprint) cannot accidentally serve one
+  // agent's MCP runtime to another agent.
   return {
     loaded,
     fingerprint: createCatalogFingerprint(loaded.mcpServers),
@@ -118,10 +125,12 @@ export function createSessionMcpRuntime(params: {
   sessionId: string;
   sessionKey?: string;
   workspaceDir: string;
+  agentId?: string;
   cfg?: OpenClawConfig;
 }): SessionMcpRuntime {
   const { loaded, fingerprint: configFingerprint } = loadSessionMcpConfig({
     workspaceDir: params.workspaceDir,
+    agentId: params.agentId,
     cfg: params.cfg,
     logDiagnostics: true,
   });
@@ -314,6 +323,7 @@ function createSessionMcpRuntimeManager(
       }
       const { fingerprint: nextFingerprint } = loadSessionMcpConfig({
         workspaceDir: params.workspaceDir,
+        agentId: params.agentId,
         cfg: params.cfg,
         logDiagnostics: false,
       });
@@ -348,6 +358,7 @@ function createSessionMcpRuntimeManager(
           sessionId: params.sessionId,
           sessionKey: params.sessionKey,
           workspaceDir: params.workspaceDir,
+          agentId: params.agentId,
           cfg: params.cfg,
           configFingerprint: nextFingerprint,
         }),
@@ -427,6 +438,7 @@ export async function getOrCreateSessionMcpRuntime(params: {
   sessionId: string;
   sessionKey?: string;
   workspaceDir: string;
+  agentId?: string;
   cfg?: OpenClawConfig;
 }): Promise<SessionMcpRuntime> {
   return await getSessionMcpRuntimeManager().getOrCreate(params);

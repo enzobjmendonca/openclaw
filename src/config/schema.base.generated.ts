@@ -6566,6 +6566,81 @@ export const GENERATED_BASE_CONFIG_SCHEMA: BaseConfigSchemaResponse = {
                   description:
                     "Optional per-agent embedded Pi overrides. Use this to opt specific agents into stricter GPT-5 execution behavior without changing the global default.",
                 },
+                mcp: {
+                  type: "object",
+                  properties: {
+                    servers: {
+                      type: "object",
+                      propertyNames: {
+                        type: "string",
+                      },
+                      additionalProperties: {
+                        type: "object",
+                        properties: {
+                          command: {
+                            type: "string",
+                          },
+                          args: {
+                            type: "array",
+                            items: {
+                              type: "string",
+                            },
+                          },
+                          env: {
+                            type: "object",
+                            propertyNames: {
+                              type: "string",
+                            },
+                            additionalProperties: {
+                              anyOf: [
+                                {
+                                  type: "string",
+                                },
+                                {
+                                  type: "number",
+                                },
+                                {
+                                  type: "boolean",
+                                },
+                              ],
+                            },
+                          },
+                          cwd: {
+                            type: "string",
+                          },
+                          workingDirectory: {
+                            type: "string",
+                          },
+                          url: {
+                            type: "string",
+                            format: "uri",
+                          },
+                          headers: {
+                            type: "object",
+                            propertyNames: {
+                              type: "string",
+                            },
+                            additionalProperties: {
+                              anyOf: [
+                                {
+                                  type: "string",
+                                },
+                                {
+                                  type: "number",
+                                },
+                                {
+                                  type: "boolean",
+                                },
+                              ],
+                            },
+                          },
+                        },
+                        additionalProperties: {},
+                      },
+                    },
+                  },
+                  additionalProperties: false,
+                },
                 sandbox: {
                   type: "object",
                   properties: {
@@ -27390,6 +27465,10 @@ export const GENERATED_BASE_CONFIG_SCHEMA: BaseConfigSchemaResponse = {
     "agents.list[].memorySearch.remote.apiKey": {
       sensitive: true,
       tags: ["security", "auth"],
+    },
+    "agents.list[].mcp.servers.*.headers.*": {
+      sensitive: true,
+      tags: ["security"],
     },
     "agents.list[].sandbox.ssh.identityData": {
       sensitive: true,

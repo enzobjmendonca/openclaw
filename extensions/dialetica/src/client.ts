@@ -219,11 +219,17 @@ export async function sendDialeticaStreamEvent(params: {
               agentId: params.event.agentId,
               agentName: params.event.agentName,
             }
-          : {
-              kind: params.event.kind,
-              messageId: params.event.messageId,
-              content: params.event.content,
-            },
+          : params.event.kind === "agent_thinking"
+            ? {
+                kind: params.event.kind,
+                agentId: params.event.agentId,
+                agentName: params.event.agentName,
+              }
+            : {
+                kind: params.event.kind,
+                messageId: params.event.messageId,
+                content: params.event.content,
+              },
     }),
   });
   await readJson<{ ok: true }>(response, "Dialetica stream");
@@ -231,8 +237,11 @@ export async function sendDialeticaStreamEvent(params: {
     accountId: params.account.accountId,
     roomId: room.roomId,
     kind: params.event.kind,
-    messageId: params.event.messageId,
-    contentLength: "content" in params.event ? params.event.content.length : 0,
+    messageId: "messageId" in params.event ? params.event.messageId : undefined,
+    contentLength:
+      "content" in params.event && typeof params.event.content === "string"
+        ? params.event.content.length
+        : 0,
     contentPreview:
       "content" in params.event && typeof params.event.content === "string"
         ? params.event.content.slice(0, 120)

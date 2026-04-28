@@ -1121,6 +1121,7 @@ export async function runEmbeddedAttempt(
       const settingsManager = createPreparedEmbeddedPiSettingsManager({
         cwd: effectiveWorkspace,
         agentDir,
+        agentId: sessionAgentId,
         cfg: params.config,
         contextTokenBudget: params.contextTokenBudget,
       });

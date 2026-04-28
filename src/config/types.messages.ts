@@ -25,6 +25,14 @@ export type InboundDebounceByProvider = Record<string, number>;
 export type InboundDebounceConfig = {
   debounceMs?: number;
   byChannel?: InboundDebounceByProvider;
+  /**
+   * Maximum wait from the first buffered item (ms). Caps trailing-edge
+   * debounce so a continuously active room cannot starve the buffer
+   * indefinitely. When unset or 0, no cap is applied (legacy behavior).
+   */
+  maxWaitMs?: number;
+  /** Per-channel max-wait overrides (ms). */
+  maxWaitMsByChannel?: InboundDebounceByProvider;
 };
 
 export type BroadcastStrategy = "parallel" | "sequential";

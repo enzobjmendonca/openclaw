@@ -70,6 +70,15 @@ function loadBundleSettingsFile(params: {
 
 export function loadEnabledBundlePiSettingsSnapshot(params: {
   cwd: string;
+  /**
+   * Optional agent identifier. When provided, the project-settings
+   * snapshot reflects the per-agent MCP overlay
+   * (`agents.list[id=agentId].mcp.servers`) so pi-coding-agent's view
+   * of MCP servers matches what the per-session MCP runtime will
+   * actually use. Without this, the snapshot would only reflect
+   * global + bundle MCP, drifting from the agent's real runtime.
+   */
+  agentId?: string;
   cfg?: OpenClawConfig;
 }): PiSettingsSnapshot {
   const workspaceDir = params.cwd.trim();
@@ -115,6 +124,7 @@ export function loadEnabledBundlePiSettingsSnapshot(params: {
 
   const embeddedPiMcp = loadEmbeddedPiMcpConfig({
     workspaceDir,
+    agentId: params.agentId,
     cfg: params.cfg,
   });
   for (const diagnostic of embeddedPiMcp.diagnostics) {
